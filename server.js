@@ -28,14 +28,6 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-const logSchema = new mongoose.Schema({
-  date: Date,
-  description: String,
-  duration: Number
-});
-
-const Log = mongoose.model("Log", logSchema);
-
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/index.html");
 });
