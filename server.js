@@ -5,13 +5,14 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const uri = process.env.mongo_uri;
+const url = require("url");
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors())
-app.use(express.static('public'))
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
+app.use(cors());
+app.use(express.static("public"));
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/views/index.html");
 });
 
 mongoose.connect(uri, {
@@ -41,10 +42,26 @@ app.get("/api/exercise/users", (req, res) => {
   });
 });
 
-app.get("/api/exercise/log/:input", (req, res) => {
-  console.log(req.params.input);
-  User.find({ _id: req.params.input }).exec((err, result) => {
-    res.json(...result);
+app.get("/api/exercise/log/", (req, res) => {
+  let params = url.parse(req.url, true).query;
+  console.log(params)
+  User.find({ _id: params.userId }).exec((err, result) => {
+    let logArray = result[0].log.map(a => a);
+    if (params.from && params.to) {
+      let from = new Date(params.from);
+      let to = new Date(params.to);
+      logArray = logArray.filter(obj => {
+         let date = new Date(obj.date);
+         if (date >= from && date <= to){
+          return obj;
+        }
+      })
+    }
+    if (params.limit) {
+      logArray= logArray.splice(0, params.limit);
+    }
+    let displayObject = { username: result[0].username, _id: result[0]._id, count: logArray.length, log: logArray };
+    res.json(displayObject);
   });
 });
 
@@ -71,20 +88,14 @@ app.post("/api/exercise/new-user", (req, res) => {
 app.post("/api/exercise/add", (req, res) => {
   let newDate = 0;
 
-  if (req.body.date == "" || req.body.date == undefined || new Date(req.body.date) == "Invalid Date"){
-    newDate = new Date().toLocaleDateString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    });
+  if (
+    req.body.date == "" ||
+    req.body.date == undefined ||
+    new Date(req.body.date) == "Invalid Date"
+  ) {
+    newDate = new Date().toDateString();
   } else {
-    newDate = new Date(req.body.date).toLocaleDateString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    });
+    newDate = new Date(req.body.date).toDateString();
   }
 
   User.findOneAndUpdate(
@@ -100,7 +111,7 @@ app.post("/api/exercise/add", (req, res) => {
     },
     { new: true, upsert: true },
     (err, user) => {
-      res.send({
+      res.json({
         _id: user._id,
         username: user.username,
         ...user.log[user.log.length - 1]
