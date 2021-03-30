@@ -1,3 +1,1 @@
-# sng-exercise-tracker
-
-This is my code for the freeCodeCamp exercise tracker challenge.
+# [Exercise Tracker](https://www.freecodecamp.org/learn/apis-and-microservices/apis-and-microservices-projects/exercise-tracker)
